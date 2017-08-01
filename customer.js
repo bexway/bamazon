@@ -18,28 +18,40 @@ var connection = mysql.createConnection({
 connection.connect(function(error) {
   if(error) throw error;
   console.log("connected as id "+connection.threadId);
-  var products = [];
   customerStart();
 
 });
 
 function customerStart(){
   displayProducts().then(function(res){
-    console.log(res);
-    console.log(res.length);
+    var products = [];
     for(var r in res){
       products.push("Product "+res[r].item_id+": "+res[r].product_name+" - $"+res[r].price+" ("+res[r].stock_quantity+" in stock)");
     }
     products.push("Quit without purchasing");
     promptProduct(products).then(function(response){
-      if(response.purchaseName == "Quit without purchasing"){
+      if(response.product == "Quit without purchasing"){
+        console.log("Bye!");
         connection.end();
         return;
       }
       else{
-        console.log(response);
+        // console.log(response);
         var purchaseName = /Product \d*\:/.exec(response.product)[0];
         var purchaseId = purchaseName.slice(8, purchaseName.length-1);
+        var stockName = /\(\d* in stock\)/.exec(response.product)[0];
+        var stockQuantity = stockName.slice(1, stockName.length-10);
+        // console.log(quantity);
+        promptQuantity().then(function(response){
+          makePurchase(purchaseId, parseInt(response.quantity), parseInt(stockQuantity))
+          .then(function(){
+            updateProduct(parseInt(purchaseId), parseInt(response.quantity), parseInt(stockQuantity));
+          })
+          .catch(function(){
+            console.log("Insufficient quantity available! Please make a different purchase:");
+            customerStart();
+          });
+        });
       }
     });
   });
@@ -71,33 +83,47 @@ function promptQuantity(){
     );
 }
 
-function makePurchase(){
-  //check if in stock_quantity
-  //if too low, abort and error,
-  //otherwise, run updateProduct
+function makePurchase(purchasedProduct, purchaseQuantity, stockQuantity){
+  return new Promise(function(resolve, reject) {
+    //check if in stock_quantity
+    if(purchaseQuantity>stockQuantity){
+      reject();
+    } else{
+      // updateProduct(purchasedProduct, purchaseQuantity, stockQuantity);
+      resolve();
+    }
+    //if too low, abort and error,
+    //otherwise, run updateProduct
+  });
+
 }
 
-function updateProduct(purchased_quantity){
+function updateProduct(purchasedProduct, purchaseQuantity, stockQuantity){
   var query = connection.query(
     // ? fills in with the following argument
-    "update products set ? where ?",
+    // "UPDATE products SET ? WHERE ?",
+    // [
+    //   {
+    //     quantity: 500
+    //   },
+    //   {
+    //     item_id: "1"
+    //   }
+    // ],
+    "UPDATE products SET ? WHERE ?",
     [
       {
-        quantity:100,
+        stock_quantity: stockQuantity - purchaseQuantity
       },
       {
-        id:4,
-      }
+        item_id: purchasedProduct
+      },
     ],
     function(err, res){
-      // reports how many rows are affected
-      console.log(res.affectedRows);
-      deleteProduct();
+      if(err) throw err;
+      customerStart();
     }
   );
-
-  // logs the query in sql form
-  console.log(query.sql);
 }
 
 function displayProducts(){
