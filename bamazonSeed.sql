@@ -1,4 +1,4 @@
--- DROP DATABASE IF EXISTS bamazonDB;
+DROP DATABASE IF EXISTS bamazonDB;
 
 CREATE DATABASE bamazonDB;
 
@@ -16,6 +16,8 @@ CREATE TABLE products (
 
 INSERT INTO products (product_name, department_name, price, stock_quantity)
 VALUES ("product1", "department1", 5.5,  100), ("product2", "department2", 565,  101), 
-("product3", "department3", 7.5,  102);
+("product3", "department3", 7.5,  102), ("product6", "department3", 7.5,  4);
 
 SELECT * from products;
+
+SELECT * FROM products WHERE stock_quantity<5;

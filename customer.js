@@ -100,16 +100,6 @@ function makePurchase(purchasedProduct, purchaseQuantity, stockQuantity){
 
 function updateProduct(purchasedProduct, purchaseQuantity, stockQuantity){
   var query = connection.query(
-    // ? fills in with the following argument
-    // "UPDATE products SET ? WHERE ?",
-    // [
-    //   {
-    //     quantity: 500
-    //   },
-    //   {
-    //     item_id: "1"
-    //   }
-    // ],
     "UPDATE products SET ? WHERE ?",
     [
       {
