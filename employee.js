@@ -33,6 +33,21 @@ bamazonEmployee.prototype.promptMenu = function(options){
     );
 };
 
+bamazonEmployee.prototype.prettifyProductList = function(productList){
+  var products = [];
+  for(var r in productList){
+    products.push("Product "+productList[r].item_id+" in the "+productList[r].department_name+" department: "+productList[r].product_name+" - $"+productList[r].price+" ("+productList[r].stock_quantity+" in stock)");
+  }
+  return products;
+};
+
+bamazonEmployee.prototype.printPrettyProducts = function(productsList){
+  var prettyProducts = manager.prettifyProductList(productsList);
+  for(var p in prettyProducts){
+    console.log(prettyProducts[p]);
+  }
+};
+
 
 //DEFINING THE MANAGER SPECIFIC FUNCTIONS
 
@@ -43,32 +58,30 @@ manager.init = function(){
   this.promptMenu(this.options).then(function(response){
     if(response.response == "View products for sale"){
       manager.retrieveProducts(manager.connection).then(function(productsList){
-        console.log(productsList);
+        console.log("PRODUCTS FOR SALE:");
+        manager.printPrettyProducts(productsList);
         manager.init();
       });
     }
     else if (response.response == "View low inventory") {
       manager.displayLowInventory(manager.connection).then(function(productsList){
-        console.log(productsList);
+        console.log("PRODUCTS WITH LOW STOCK:");
+        manager.printPrettyProducts(productsList);
         manager.init();
       });
     }
     else if (response.response == "Add to Inventory") {
       manager.retrieveProducts(manager.connection).then(function(response){
+        var prettyProducts = manager.prettifyProductList(response);
+        var products = response;
 
-        var products = [];
-        for(var r in response){
-          products.push("Product "+response[r].item_id+": "+response[r].product_name+" - $"+response[r].price+" ("+response[r].stock_quantity+" in stock)");
-        }
-        manager.promptProduct(products).then(function(response){
-          console.log(response);
-          var productName = /Product \d*\:/.exec(response.product)[0];
-          var productId = productName.slice(8, productName.length-1);
-          var stockName = /\(\d* in stock\)/.exec(response.product)[0];
-          var stockQuantity = stockName.slice(1, stockName.length-10);
+        manager.promptProduct(prettyProducts).then(function(response){
+          var currentProduct = products[prettyProducts.indexOf(response.product)];
+
+          var productId = currentProduct.item_id;
+          var stockQuantity = currentProduct.stock_quantity;
           // console.log(quantity);
           manager.promptQuantity().then(function(response){
-            console.log("test")
             manager.restockProduct(manager.connection, productId, parseInt(response.quantity)+ parseInt(stockQuantity))
             .then(function(message){
               console.log(message);
