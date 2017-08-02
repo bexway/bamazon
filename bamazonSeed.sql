@@ -23,8 +23,8 @@ CREATE TABLE departments (
 
 
 INSERT INTO products (product_name, department_name, price, stock_quantity)
-VALUES ("product1", "Electronics", 5.5,  100), ("product2", "Clothing", 565,  101), 
-("product3", "Clothing", 7.5,  102), ("product6", "Grocery", 7.5,  4), ("product6", "Toys", 7.5,  4);
+VALUES ("Computer", "Electronics", 5.5,  100), ("Shirt", "Clothing", 565,  101), 
+("Pants", "Clothing", 7.5,  102), ("Apple", "Grocery", 7.5,  4), ("Lego", "Toys", 7.5,  4);
 
 INSERT INTO departments (department_name, over_head_costs)
 VALUES ("Electronics", 60), ("Clothing", 700), ("Grocery", 150), ("House", 500);
@@ -32,4 +32,4 @@ VALUES ("Electronics", 60), ("Clothing", 700), ("Grocery", 150), ("House", 500);
 SELECT * FROM departments;
 
 SELECT d.department_id, d.department_name, d.over_head_costs, sum(p.product_sales), (sum(p.product_sales)-d.over_head_costs) as total_profit 
-from departments d INNER JOIN products p on (p.department_name = d.department_name) group by p.department_name;
+from departments d LEFT JOIN products p on (p.department_name = d.department_name) group by p.department_name;

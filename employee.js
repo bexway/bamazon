@@ -250,7 +250,11 @@ supervisor.init = function(){
         for(var dept in response){
           var tempList = [];
           for(var col in response[dept]){
-            tempList.push(response[dept][col]);
+            if(response[dept][col]===null){
+              tempList.push("N/A");
+            }else{
+              tempList.push(response[dept][col]);
+            }
           }
           table.push(tempList);
         }
@@ -273,7 +277,7 @@ supervisor.init = function(){
 supervisor.displaySalesByDepartment = function(connection){
   return new Promise(function(resolve, reject) {
     var query = connection.query(
-      "SELECT d.department_id, d.department_name, d.over_head_costs, sum(p.product_sales), (sum(p.product_sales)-d.over_head_costs) AS total_profit FROM departments d INNER JOIN products p ON (p.department_name = d.department_name) GROUP BY p.department_name ORDER BY d.department_id",
+      "SELECT d.department_id, d.department_name, d.over_head_costs, sum(p.product_sales), (sum(p.product_sales)-d.over_head_costs) AS total_profit FROM departments d LEFT JOIN products p ON (p.department_name = d.department_name) GROUP BY p.department_name ORDER BY d.department_id",
       function(err, res){
         if(err){
           reject(error);
@@ -320,38 +324,25 @@ supervisor.promptNewDepartmentInfo = function(){
     );
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //RUN THE ACTUAL PROMPTS
-// manager.makeConnection(manager.connection)
-// .then(function(message){
-//   console.log(message);
-//   manager.init();
-// })
-// .catch(function(error){
-//   console.log(error);
-// });
-
-supervisor.makeConnection(supervisor.connection)
-.then(function(message){
-  console.log(message);
-  supervisor.init();
-})
-.catch(function(error){
-  console.log(error);
-});
+if(process.argv[2].toLowerCase() == "supervisor"){
+  console.log("Welcome, Supervisor!");
+  supervisor.makeConnection(supervisor.connection)
+  .then(function(message){
+    // console.log(message);
+    supervisor.init();
+  })
+  .catch(function(error){
+    console.log(error);
+  });
+}else{
+  console.log("Welcome, Manager!");
+  manager.makeConnection(manager.connection)
+  .then(function(message){
+    // console.log(message);
+    manager.init();
+  })
+  .catch(function(error){
+    console.log(error);
+  });
+}
