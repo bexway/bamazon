@@ -7,9 +7,6 @@ var connection = mysql.createConnection({
   port: 3306,
   user: 'root',
   password: passwordFile.password,
-
-
-
   database: 'bamazonDB'
 });
 
@@ -22,30 +19,41 @@ connection.connect(function(error) {
 
 });
 
+function prettifyProductList(productList){
+  var products = [];
+  for(var r in productList){
+    products.push(productList[r].product_name+" - $"+productList[r].price+" ("+productList[r].stock_quantity+" in stock)");
+  }
+  return products;
+}
+
+function printPrettyProducts(productsList){
+  var prettyProducts = prettifyProductList(productsList);
+  for(var p in prettyProducts){
+    console.log(prettyProducts[p]);
+  }
+}
+
 function customerStart(){
-  displayProducts().then(function(res){
-    var products = [];
-    for(var r in res){
-      products.push("Product "+res[r].item_id+": "+res[r].product_name+" - $"+res[r].price+" ("+res[r].stock_quantity+" in stock)");
-    }
-    products.push("Quit without purchasing");
-    promptProduct(products).then(function(response){
+  displayProducts().then(function(response){
+    var prettyProducts = prettifyProductList(response);
+    var products = response;
+    prettyProducts.push("Quit without purchasing");
+    promptProduct(prettyProducts).then(function(response){
       if(response.product == "Quit without purchasing"){
         console.log("Bye!");
         connection.end();
         return;
       }
       else{
-        // console.log(response);
-        var purchaseName = /Product \d*\:/.exec(response.product)[0];
-        var purchaseId = purchaseName.slice(8, purchaseName.length-1);
-        var stockName = /\(\d* in stock\)/.exec(response.product)[0];
-        var stockQuantity = stockName.slice(1, stockName.length-10);
-        // console.log(quantity);
+        var currentProduct = products[prettyProducts.indexOf(response.product)];
+
+        var productId = currentProduct.item_id;
+        var stockQuantity = currentProduct.stock_quantity;
         promptQuantity().then(function(response){
-          makePurchase(purchaseId, parseInt(response.quantity), parseInt(stockQuantity))
+          makePurchase(currentProduct, parseInt(response.quantity))
           .then(function(){
-            updateProduct(parseInt(purchaseId), parseInt(response.quantity), parseInt(stockQuantity));
+            updateProduct(currentProduct, parseInt(response.quantity));
           })
           .catch(function(){
             console.log("Insufficient quantity available! Please make a different purchase:");
@@ -83,34 +91,50 @@ function promptQuantity(){
     );
 }
 
-function makePurchase(purchasedProduct, purchaseQuantity, stockQuantity){
+function makePurchase(currentProduct, purchaseQuantity){
   return new Promise(function(resolve, reject) {
     //check if in stock_quantity
-    if(purchaseQuantity>stockQuantity){
+    if(purchaseQuantity>currentProduct.stock_quantity){
       reject();
     } else{
-      // updateProduct(purchasedProduct, purchaseQuantity, stockQuantity);
       resolve();
     }
-    //if too low, abort and error,
-    //otherwise, run updateProduct
   });
 
 }
 
-function updateProduct(purchasedProduct, purchaseQuantity, stockQuantity){
+function updateProduct(currentProduct, purchaseQuantity){
   var query = connection.query(
     "UPDATE products SET ? WHERE ?",
     [
       {
-        stock_quantity: stockQuantity - purchaseQuantity
+        stock_quantity: currentProduct.stock_quantity - purchaseQuantity
       },
       {
-        item_id: purchasedProduct
+        item_id: currentProduct.item_id
       },
     ],
     function(err, res){
       if(err) throw err;
+      tallySales(currentProduct, purchaseQuantity);
+    }
+  );
+}
+
+function tallySales(currentProduct, purchaseQuantity){
+  var query = connection.query(
+    "UPDATE products SET ? WHERE ?",
+    [
+      {
+        product_sales: currentProduct.product_sales + purchaseQuantity
+      },
+      {
+        item_id: currentProduct.item_id
+      },
+    ],
+    function(err, res){
+      if(err) throw err;
+      console.log("Thanks for your purchase of "+purchaseQuantity+ " "+currentProduct.product_name);
       customerStart();
     }
   );
