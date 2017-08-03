@@ -205,7 +205,7 @@ manager.promptNewProductInfo = function(){
         }
       },
       {
-        name: "quantity",
+        name: "stock_quantity",
         type: "input",
         message: "How many do you have in stock?:",
         validate: function(input){
@@ -224,7 +224,7 @@ manager.createProduct = function(connection, productInfo){
         product_name: productInfo.product_name,
         department_name: productInfo.department_name,
         price: productInfo.price,
-        stock_quantity: stock_quantity,
+        stock_quantity: productInfo.stock_quantity,
       },
       function(err, res){
         console.log("Thanks! Your item has been listed.");
@@ -277,7 +277,7 @@ supervisor.init = function(){
 supervisor.displaySalesByDepartment = function(connection){
   return new Promise(function(resolve, reject) {
     var query = connection.query(
-      "SELECT d.department_id, d.department_name, d.over_head_costs, sum(p.product_sales), (sum(p.product_sales)-d.over_head_costs) AS total_profit FROM departments d LEFT JOIN products p ON (p.department_name = d.department_name) GROUP BY p.department_name ORDER BY d.department_id",
+      "SELECT d.department_id, d.department_name, d.over_head_costs, sum(p.product_sales), (sum(p.product_sales)-d.over_head_costs) AS total_profit FROM departments d LEFT JOIN products p ON (p.department_name = d.department_name) GROUP BY d.department_name ORDER BY d.department_id",
       function(err, res){
         if(err){
           reject(error);
@@ -325,7 +325,7 @@ supervisor.promptNewDepartmentInfo = function(){
 };
 
 //RUN THE ACTUAL PROMPTS
-if(process.argv[2].toLowerCase() == "supervisor"){
+if(process.argv[2] == "supervisor"){
   console.log("Welcome, Supervisor!");
   supervisor.makeConnection(supervisor.connection)
   .then(function(message){

@@ -14,7 +14,7 @@ var connection = mysql.createConnection({
 
 connection.connect(function(error) {
   if(error) throw error;
-  console.log("connected as id "+connection.threadId);
+  // console.log("connected as id "+connection.threadId);
   customerStart();
 
 });

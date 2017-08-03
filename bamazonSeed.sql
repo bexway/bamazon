@@ -31,5 +31,7 @@ VALUES ("Electronics", 60), ("Clothing", 700), ("Grocery", 150), ("House", 500);
 
 SELECT * FROM departments;
 
+SELECT * FROM products;
+
 SELECT d.department_id, d.department_name, d.over_head_costs, sum(p.product_sales), (sum(p.product_sales)-d.over_head_costs) as total_profit 
-from departments d LEFT JOIN products p on (p.department_name = d.department_name) group by p.department_name;
+from departments d LEFT JOIN products p on (p.department_name = d.department_name) group by d.department_name;
