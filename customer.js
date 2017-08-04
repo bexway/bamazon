@@ -22,7 +22,7 @@ connection.connect(function(error) {
 function prettifyProductList(productList){
   var products = [];
   for(var r in productList){
-    products.push(productList[r].product_name+" - $"+productList[r].price+" ("+productList[r].stock_quantity+" in stock)");
+    products.push(productList[r].product_name+" - $"+parseFloat(productList[r].price).toFixed(2)+" ("+productList[r].stock_quantity+" in stock)");
   }
   return products;
 }
@@ -38,9 +38,9 @@ function customerStart(){
   displayProducts().then(function(response){
     var prettyProducts = prettifyProductList(response);
     var products = response;
-    prettyProducts.push("Quit without purchasing");
+    prettyProducts.push("Quit");
     promptProduct(prettyProducts).then(function(response){
-      if(response.product == "Quit without purchasing"){
+      if(response.product == "Quit"){
         console.log("Bye!");
         connection.end();
         return;
@@ -83,7 +83,7 @@ function promptQuantity(){
       {
         name: "quantity",
         type: "input",
-        message: "How many would you like to purchase? (Please enter an integer)",
+        message: "How many would you like to purchase? (will round down to an integer)",
         validate: function(input){
           return !isNaN(input);
         }
@@ -134,7 +134,7 @@ function tallySales(currentProduct, purchaseQuantity){
     ],
     function(err, res){
       if(err) throw err;
-      console.log("Thanks for your purchase of "+purchaseQuantity+ " "+currentProduct.product_name);
+      console.log("Thanks for your purchase of "+purchaseQuantity+ " units of "+currentProduct.product_name);
       customerStart();
     }
   );

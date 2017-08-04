@@ -37,7 +37,7 @@ BamazonEmployee.prototype.promptMenu = function(options){
 BamazonEmployee.prototype.prettifyProductList = function(productList){
   var products = [];
   for(var r in productList){
-    products.push(productList[r].product_name+" - $"+productList[r].price+" ("+productList[r].stock_quantity+" in stock)");
+    products.push(productList[r].product_name+" - $"+parseFloat(productList[r].price).toFixed(2)+" ("+productList[r].stock_quantity+" in stock)");
   }
   return products;
 };
@@ -83,7 +83,7 @@ manager.init = function(){
           var stockQuantity = currentProduct.stock_quantity;
           // console.log(quantity);
           manager.promptQuantity().then(function(response){
-            manager.restockProduct(manager.connection, productId, parseInt(response.quantity)+ parseInt(stockQuantity))
+            manager.restockProduct(manager.connection, currentProduct, parseInt(response.quantity)+ parseInt(stockQuantity))
             .then(function(message){
               console.log(message);
               manager.init();
@@ -137,7 +137,7 @@ manager.displayLowInventory = function(connection){
   });
 };
 
-manager.restockProduct = function(connection, productId, stockQuantity){
+manager.restockProduct = function(connection, currentProduct, stockQuantity){
   return new Promise(function(resolve, reject) {
     var query = connection.query(
       "UPDATE products SET ? WHERE ?",
@@ -146,12 +146,12 @@ manager.restockProduct = function(connection, productId, stockQuantity){
           stock_quantity: stockQuantity
         },
         {
-          item_id: productId
+          item_id: currentProduct.item_id
         },
       ],
       function(err, res){
         if(err) reject(err);
-        resolve("Thanks for your purchase! Product "+productId+" now has "+stockQuantity+" units in stock.");
+        resolve("Thanks for your purchase! There are now "+stockQuantity+" units of "+currentProduct.product_name+" in stock.");
       }
     );
   });
@@ -175,7 +175,7 @@ manager.promptQuantity = function(){
       {
         name: "quantity",
         type: "input",
-        message: "How many would you like to purchase? (Please enter an integer):",
+        message: "How many would you like to purchase? (will round down to an integer):",
         validate: function(input){
           return !isNaN(input);
         }
@@ -199,7 +199,7 @@ manager.promptNewProductInfo = function(){
       {
         name: "price",
         type: "input",
-        message: "How much does your item cost?: $",
+        message: "How much does your item cost? (will be rounded to two decimal places): $",
         validate: function(input){
           return !isNaN(input);
         }
@@ -207,7 +207,7 @@ manager.promptNewProductInfo = function(){
       {
         name: "stock_quantity",
         type: "input",
-        message: "How many do you have in stock?:",
+        message: "How many do you have in stock? (will round down to an integer):",
         validate: function(input){
           return !isNaN(input);
         }
@@ -223,8 +223,8 @@ manager.createProduct = function(connection, productInfo){
       {
         product_name: productInfo.product_name,
         department_name: productInfo.department_name,
-        price: productInfo.price,
-        stock_quantity: productInfo.stock_quantity,
+        price: parseFloat(productInfo.price).toFixed(2),
+        stock_quantity: parseInt(productInfo.stock_quantity),
       },
       function(err, res){
         console.log("Thanks! Your item has been listed.");
@@ -249,12 +249,19 @@ supervisor.init = function(){
 
         for(var dept in response){
           var tempList = [];
+          var isID = true;
           for(var col in response[dept]){
-            if(response[dept][col]===null){
+            var currentColumn = response[dept][col];
+            if(currentColumn===null){
               tempList.push("N/A");
             }else{
-              tempList.push(response[dept][col]);
+              if(isNaN(currentColumn) || isID){
+                tempList.push(currentColumn);
+              } else{
+                tempList.push("$"+parseFloat(currentColumn).toFixed(2));
+              }
             }
+            isID = false;
           }
           table.push(tempList);
         }
@@ -295,7 +302,7 @@ supervisor.createDepartment = function(connection, departmentInfo){
       "insert into departments set ?",
       {
         department_name: departmentInfo.department_name,
-        over_head_costs: departmentInfo.over_head_costs,
+        over_head_costs: parseFloat(departmentInfo.over_head_costs).toFixed(),
       },
       function(err, res){
         console.log("Thanks! Your department has been created.");
@@ -315,7 +322,7 @@ supervisor.promptNewDepartmentInfo = function(){
       {
         name: "over_head_costs",
         type: "input",
-        message: "What is the overhead cost of your department?: $",
+        message: "What is the overhead cost of your department? (will be rounded to two decimal places): $",
         validate: function(input){
           return !isNaN(input);
         }
