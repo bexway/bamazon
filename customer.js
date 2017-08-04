@@ -126,7 +126,7 @@ function tallySales(currentProduct, purchaseQuantity){
     "UPDATE products SET ? WHERE ?",
     [
       {
-        product_sales: currentProduct.product_sales + purchaseQuantity
+        product_sales: currentProduct.product_sales + (purchaseQuantity*currentProduct.price)
       },
       {
         item_id: currentProduct.item_id
